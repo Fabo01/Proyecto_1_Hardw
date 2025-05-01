@@ -1,0 +1,199 @@
+% Informe en LaTeX - Proyecto 1: Procesamiento de Audio WAV
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\geometry{a4paper, margin=2.5cm}
+\usepackage{hyperref}
+\usepackage{graphicx}
+
+\title{\textbf{Procesamiento de Audio WAV: Extracción y Reconstrucción de Canal Derecho}}
+\author{Nombre(s) del/los autor(es)}
+\date{Mayo 2025}
+
+\begin{document}
+
+% Portada personalizada
+\begin{titlepage}
+    \centering
+    {\scshape\LARGE Universidad Nombre \par}
+    {\scshape\Large Facultad de Ingeniería \par}
+    {\scshape\large Asignatura: INFO1155 \par}
+    \vspace{2cm}
+    {\Huge\bfseries Procesamiento de Audio WAV: Extracción y Reconstrucción de Canal Derecho\par}
+    \vspace{1.5cm}
+    {\Large Informe Final\par}
+    \vspace{2cm}
+    {\large Autor(es): Nombre(s) del/los autor(es)\par}
+    {\large Profesor: Nombre del profesor\par}
+    {\large Fecha: 1 de mayo de 2025\par}
+    \vfill
+    \includegraphics[width=0.3\textwidth]{logo.png} % Si tienes un logo, si no, elimina esta línea
+    \vfill
+\end{titlepage}
+
+\begin{center}
+\textbf{Universidad} \\ Facultad de Ingeniería \\ Asignatura: INFO1155 \\ Profesor: [Nombre del profesor] \\ 
+\end{center}
+\vspace{2cm}
+
+% Resumen
+\section*{Resumen}
+Este informe describe el desarrollo de un programa en Python para procesar un archivo de audio WAV estéreo, extraer el canal derecho (que contiene una canción invertida), reconstruir el orden original, reducir la frecuencia de muestreo y guardar el resultado en un archivo mono. Todo el procesamiento se realiza únicamente con el módulo estándar \texttt{wave} de Python. El archivo resultante puede ser reproducido y visualizado en Audacity.
+
+% Introducción
+\section{Introducción}
+El formato WAV es ampliamente utilizado para almacenar audio sin compresión. En este proyecto, se trabaja con un archivo estéreo donde el canal izquierdo contiene ruido blanco y el canal derecho una canción invertida. El objetivo es obtener la canción en su orden original y en formato mono, cumpliendo restricciones de uso exclusivo de la biblioteca estándar de Python.
+
+% Definiciones y marco teórico
+\section{Definiciones y marco teórico}
+\textbf{Archivo WAV:} Es un formato de audio digital sin compresión basado en el estándar RIFF. Contiene una cabecera con información sobre el audio (número de canales, frecuencia de muestreo, bits por muestra) y los datos de audio en sí.\\
+\textbf{Canal:} En audio digital, un canal representa una señal de audio independiente. Un archivo estéreo tiene dos canales: izquierdo y derecho.\\
+\textbf{Frecuencia de muestreo:} Es la cantidad de muestras de audio tomadas por segundo, medida en Hertz (Hz).\\
+\textbf{Downsampling:} Proceso de reducir la frecuencia de muestreo, eliminando muestras para disminuir la cantidad de datos.\\
+\textbf{Módulo wave de Python:} Permite leer y escribir archivos WAV accediendo a sus cabeceras y datos de audio.
+
+% Desarrollo y/o implementación de actividades
+\section{Desarrollo y/o implementación de actividades}
+A continuación se detalla el proceso paso a paso, mostrando ejemplos de código y explicando los cambios en las propiedades y en la memoria del archivo WAV:
+
+\subsection*{1. Lectura del archivo y obtención de parámetros}
+Se abre el archivo con el módulo \texttt{wave} y se obtienen sus propiedades principales:
+
+\begin{verbatim}
+import wave
+archivo_entrada = 'song.wav'
+with wave.open(archivo_entrada, 'rb') as wav_in:
+    num_canales = wav_in.getnchannels()
+    frecuencia_muestreo = wav_in.getframerate()
+    num_muestras = wav_in.getnframes()
+    sample_width = wav_in.getsampwidth()
+    frames = wav_in.readframes(num_muestras)
+\end{verbatim}
+
+\textbf{Explicación:} Se accede a la cabecera del archivo, obteniendo el número de canales (2), frecuencia de muestreo (44100 Hz), tamaño de muestra (16 bits) y los datos de audio. En memoria, los datos se almacenan como una secuencia de bytes, donde cada frame contiene 4 bytes (2 por canal).
+
+\subsection*{2. Extracción del canal derecho}
+Se recorre el bloque de datos y se extraen los bytes correspondientes al canal derecho:
+
+\begin{verbatim}
+canal_derecho = bytearray()
+for i in range(0, len(frames), 4):
+    canal_derecho += frames[i+2:i+4]
+\end{verbatim}
+
+\textbf{Explicación:} Se toma solo el canal derecho de cada frame (bytes 2 y 3). En memoria, se construye un nuevo bloque de datos que contendrá únicamente el canal derecho, listo para ser procesado.
+
+\subsection*{3. Inversión del canal derecho}
+El canal derecho está invertido, por lo que se invierte el orden de las muestras:
+
+\begin{verbatim}
+muestras = [canal_derecho[i:i+2] for i in range(0, len(canal_derecho), 2)]
+muestras_invertidas = muestras[::-1]
+\end{verbatim}
+
+\textbf{Explicación:} Cada muestra ocupa 2 bytes. Se invierte la lista de muestras para reconstruir el orden original de la canción. En memoria, ahora las muestras están en el orden correcto.
+
+\subsection*{4. Downsampling (reducción de frecuencia)}
+Para reducir la frecuencia de muestreo a 22050 Hz, se toma una de cada dos muestras:
+
+\begin{verbatim}
+muestras_downsampled = muestras_invertidas[::2]
+\end{verbatim}
+
+\textbf{Explicación:} Esto reduce la cantidad de datos a la mitad y, por lo tanto, la frecuencia de muestreo. El bloque de datos en memoria ahora es más pequeño y adecuado para la nueva frecuencia.
+
+\subsection*{5. Escritura del archivo de salida y cambios en la estructura WAV}
+Se unen las muestras y se escribe el archivo de salida:
+
+\begin{verbatim}
+datos_salida = b''.join(muestras_downsampled)
+with wave.open('out.wav', 'wb') as wav_out:
+    wav_out.setnchannels(1)
+    wav_out.setsampwidth(2)
+    wav_out.setframerate(22050)
+    wav_out.writeframes(datos_salida)
+\end{verbatim}
+
+\textbf{Explicación:} Aquí se modifican las propiedades clave de la cabecera WAV:
+\begin{itemize}
+    \item Número de canales: de 2 (estéreo) a 1 (mono)
+    \item Frecuencia de muestreo: de 44100 Hz a 22050 Hz
+    \item Tamaño de datos: reducido por el downsampling
+    \item El subchunk \texttt{data} contiene solo el canal derecho, invertido y reducido
+\end{itemize}
+El módulo \texttt{wave} actualiza automáticamente la cabecera y los tamaños de los bloques al escribir el archivo.
+
+\subsection*{6. Verificación y visualización}
+El archivo \texttt{out.wav} puede abrirse en Audacity para comprobar que la canción se escucha correctamente y en el orden original. Se recomienda visualizar la forma de onda para verificar la reconstrucción.
+
+% Conclusiones
+\section{Conclusiones}
+El proyecto demuestra el uso eficiente de Python estándar para manipulación básica de audio, aplicando principios de claridad y simplicidad. Se logró extraer, invertir y reducir la frecuencia del canal derecho, generando un archivo mono reproducible en cualquier software compatible. El proceso es reproducible y fácilmente defendible.
+
+% Referencias Bibliográficas
+\section{Referencias Bibliográficas}
+\begin{itemize}
+    \item Formato WAV explicado: \url{http://soundfile.sapp.org/doc/WaveFormat/}
+    \item Documentación oficial del módulo wave de Python: \url{https://docs.python.org/3/library/wave.html}
+    \item Enunciado del proyecto: P\#1 INFO1155\_1\_2.pdf
+\end{itemize}
+
+% Anexo: Código fuente utilizado
+\section*{Anexo: Código fuente utilizado}
+A continuación se presenta el código completo utilizado para el procesamiento del archivo WAV:
+
+\begin{verbatim}
+# Este programa procesa un archivo WAV estéreo para obtener información básica sobre el audio.
+# Además, extrae el canal derecho (que está invertido), lo reconstruye, lo convierte a mono,
+# reduce la frecuencia de muestreo a 22050 Hz y guarda el resultado en out.wav.
+# Solo se utiliza el módulo wave de la biblioteca estándar de Python.
+
+import wave
+
+# Nombre del archivo de audio de entrada y salida
+archivo_entrada = 'song.wav'
+archivo_salida = 'out.wav'
+
+# Abrir el archivo WAV de entrada en modo lectura binaria
+with wave.open(archivo_entrada, 'rb') as wav_in:
+    # Obtener parámetros del archivo de entrada
+    num_canales = wav_in.getnchannels()  # Debe ser 2 (estéreo)
+    frecuencia_muestreo = wav_in.getframerate()  # Debe ser 44100
+    num_muestras = wav_in.getnframes()
+    sample_width = wav_in.getsampwidth()  # Debe ser 2 bytes (16 bits)
+
+    # Leer todos los frames del archivo (cada frame contiene muestras de ambos canales)
+    frames = wav_in.readframes(num_muestras)
+
+# Extraer el canal derecho:
+# Cada frame tiene 4 bytes (2 bytes canal izquierdo, 2 bytes canal derecho)
+# Vamos a extraer solo los bytes del canal derecho
+canal_derecho = bytearray()
+for i in range(0, len(frames), 4):
+    # Tomar los dos bytes correspondientes al canal derecho
+    canal_derecho += frames[i+2:i+4]
+
+# El canal derecho está invertido, así que lo reconstruimos invirtiendo el orden de las muestras
+# Cada muestra son 2 bytes, así que invertimos de a 2 bytes
+muestras = [canal_derecho[i:i+2] for i in range(0, len(canal_derecho), 2)]
+muestras_invertidas = muestras[::-1]
+
+# Downsampling: reducir la frecuencia de muestreo a la mitad (de 44100 a 22050 Hz)
+# Para esto, tomamos una de cada dos muestras
+muestras_downsampled = muestras_invertidas[::2]
+
+# Unimos las muestras en un solo bloque de bytes
+datos_salida = b''.join(muestras_downsampled)
+
+# Guardar el resultado en un nuevo archivo WAV mono, 16 bits, 22050 Hz
+with wave.open(archivo_salida, 'wb') as wav_out:
+    wav_out.setnchannels(1)  # Mono
+    wav_out.setsampwidth(2)  # 16 bits
+    wav_out.setframerate(22050)  # 22050 Hz
+    wav_out.writeframes(datos_salida)
+
+print('Procesamiento completado. Archivo out.wav generado correctamente.')
+\end{verbatim}
+
+\end{document}
