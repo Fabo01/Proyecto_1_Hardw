@@ -3,9 +3,19 @@
 \usepackage[utf8]{inputenc}
 \usepackage[spanish]{babel}
 \usepackage{geometry}
-\geometry{a4paper, margin=2.5cm}
+\geometry{a4paper, margin=2.5cm, headheight=70pt} % Aumentado headheight para el logo
 \usepackage{hyperref}
 \usepackage{graphicx}
+\usepackage{fancyhdr}
+
+% Configuración de encabezados con logo
+\pagestyle{fancy}
+\fancyhf{} % Limpia los encabezados y pies de página actuales
+\fancyhead[L]{\includegraphics[width=7cm]{uct.png}}
+\fancyhead[R]{\textbf{Procesamiento de Audio Wav.}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{80pt} % Asegura espacio suficiente para el logo
 
 \title{\textbf{Procesamiento de Audio WAV: Extracción y Reconstrucción de Canal Derecho}}
 \author{Nombre(s) del/los autor(es)}
@@ -16,26 +26,26 @@
 % Portada personalizada
 \begin{titlepage}
     \centering
-    {\scshape\LARGE Universidad Nombre \par}
+    \includegraphics[width=0.4\textwidth]{uct.png} % Logo en la portada
+    \vspace{1cm}
+    
+    {\scshape\LARGE Universidad Católica de Temuco \par}
     {\scshape\Large Facultad de Ingeniería \par}
-    {\scshape\large Asignatura: INFO1155 \par}
+    {\scshape\large INFO1155 Arquitectura de Hardware \par}
     \vspace{2cm}
     {\Huge\bfseries Procesamiento de Audio WAV: Extracción y Reconstrucción de Canal Derecho\par}
     \vspace{1.5cm}
     {\Large Informe Final\par}
     \vspace{2cm}
-    {\large Autor(es): Nombre(s) del/los autor(es)\par}
-    {\large Profesor: Nombre del profesor\par}
-    {\large Fecha: 1 de mayo de 2025\par}
-    \vfill
-    \includegraphics[width=0.3\textwidth]{logo.png} % Si tienes un logo, si no, elimina esta línea
+    {\large Autores: Fabian Garcia y Marcelo Vidal.\par}
+    {\large Profesor: Luis Caro.\par}
+    {\large Fecha: 5 de mayo de 2025\par}
     \vfill
 \end{titlepage}
 
-\begin{center}
-\textbf{Universidad} \\ Facultad de Ingeniería \\ Asignatura: INFO1155 \\ Profesor: [Nombre del profesor] \\ 
-\end{center}
-\vspace{2cm}
+% Asegurar que la primera página después de la portada también tenga el encabezado
+\thispagestyle{fancy}
+\vspace{1.5cm} % Espacio adicional después del encabezado para evitar solapamiento
 
 % Resumen
 \section*{Resumen}
